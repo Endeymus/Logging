@@ -10,8 +10,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,10 +35,6 @@ public class Controller implements Runnable {
     public Controller(String flowName, FileManager fileManager) {
         this.flowName = flowName;
         this.fileManager = fileManager;
-    }
-
-    private Controller(String flowName) {
-        this.flowName = flowName;
     }
 
     @Override
@@ -107,53 +101,14 @@ public class Controller implements Runnable {
         //============================Несанкционированное создание файла============================
         unauthorizedFileCreation(wr, wrStart);
         //==========================================================================================
-        //=================================Несанкционированное создание файла=======================
-        /*try {
-            Stream<Path> stream;
-            stream = Files.walk(dir_PATH);
-            int finalColvo = colvo;
-            stream.forEach(x -> {
-                if (!x.getFileName().toString().equals("files")) {
-                    boolean del = false;
-                    boolean crt = false;
-                    for (int i = finalColvo - 1; i >= 0; i--) {
-                        Matcher matcherFile = fileName.matcher(line[i]);
-                        if (matcherFile.find()) {
-                            String file = line[i].substring(matcherFile.start(), matcherFile.end());
-                            if (x.getFileName().toString().contains(file)) {
-                                if (line[i].contains("[DELETED]")) {
-                                    del = true;
-                                }
-                                if (line[i].contains("[CREATE]")) {
-                                    crt = true;
-                                }
-                            }
-                        }
-                    }
-                    if (!del && !crt) {
-                        wr.append("Несанкционированное создание файла ").append(x.getFileName().toString());
-                        try {
-                            Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        wr.delete(wrStart, wr.length());
-                    }
-                }
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
-        //==========================================================================================
         wr.delete(wrStart, wr.length());
         //=================================Несанкционированное удаление файлов======================
-        unauthorizedFileDeletion2(wr, wrStart);
+        unauthorizedFileDeletion(wr, wrStart);
         //==========================================================================================
     }
-    private void unauthorizedFileDeletion2(StringBuilder wr, int wrStart) {
+    private void unauthorizedFileDeletion(StringBuilder wr, int wrStart) {
         Stream<Path> stream;
-        Map<String, Integer> map = new LinkedHashMap<String, Integer>();
+        Map<String, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < line.length && line[i] != null; i++) {
             Matcher matcherFile = fileName.matcher(line[i]);
             if (matcherFile.find() && !line[i].contains("[MODIFIED]")) {
@@ -185,6 +140,7 @@ public class Controller implements Runnable {
                     wr.append(" Несанкционированное удаление файла ").append(k);
                     try {
                         Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                        Files.createFile(dir_PATH.resolve(k));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -195,49 +151,6 @@ public class Controller implements Runnable {
             e.printStackTrace();
         }
     }
-    //старый метод
-    private void unauthorizedFileDeletion(StringBuilder wr, int wrStart) {
-        Stream<Path> stream;
-        for (int i = 0; i < line.length && line[i] != null; i++) {
-            Matcher matcherFile = fileName.matcher(line[i]);
-            boolean del = false;
-            if (matcherFile.find() && !line[i].contains("[MODIFIED]")) {
-                String file = line[i].substring(matcherFile.start(), matcherFile.end());
-                for (int i1 = i + 1; i1 < line.length && line[i1] != null; i1++) {
-                    if (line[i1].contains("[DELETED]") && line[i1].contains(file)) {
-                        del = true;
-                    }
-                    if (line[i1].contains("[CREATE]") && line[i1].contains(file)) {
-                        del = false;
-                    }
-                }
-                if (!del) {
-                    try {
-                        stream = Files.walk(dir_PATH);
-                        AtomicLong quat = new AtomicLong();
-                        stream.forEach(x -> {
-                            if (!x.getFileName().toString().equals("files")) {
-                                if (!x.getFileName().toString().equals(file))
-                                    quat.getAndIncrement();
-                            }
-                        });
-                        if (quat.get() == quantity()) {
-                            wr.append("Несанкционированное удаление файла ").append(file);
-                            try {
-                                Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            wr.delete(wrStart, wr.length());
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
     private void reverseCheckErrorLog(StringBuilder wr, int wrStart, int colvo) {
         for (int i = colvo - 1; i > 0; i--) {
             if (line[i].contains("был создан.")) {
@@ -327,51 +240,6 @@ public class Controller implements Runnable {
 
         }
     }
-    //Старый метод
-    private void unauthorizedFileCreation(StringBuilder wr, int wrStart, int colvo) {
-        Map<String, Integer> map = new LinkedHashMap<String, Integer>();
-        for (int i = colvo - 1; i >= 0; i--) {
-            Stream<Path> stream;
-            AtomicBoolean del = new AtomicBoolean(false);
-            Matcher matcherFile = fileName.matcher(line[i]);
-            try {
-                stream = Files.walk(dir_PATH);
-                int finalI = i;
-                if (matcherFile.find() && !line[i].contains("[MODIFIED]")) {
-                    String file = line[finalI].substring(matcherFile.start(), matcherFile.end());
-                    if (!map.containsKey(file)) {
-                        map.put(file, 0);
-                    }
-                    stream.forEach(x -> {
-                        if (x.getFileName().toString().equals(file)) {
-                            if (line[finalI].contains("[DELETED]")) {
-                                del.set(true);
-                                map.put(file, map.get(file) - 1);
-                            }
-                            if (line[finalI].contains("[CREATE]")) {
-                                del.set(false);
-                                map.put(file, map.get(file) + 1);
-                            }
-                        }
-                    });
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        map.forEach((k, v) -> {
-            if (v == 0) {
-                wr.append("Несанкционированное создание файла ").append(k);
-                try {
-                    Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                wr.delete(wrStart, wr.length());
-            }
-        });
-        wr.delete(wrStart, wr.length());
-    }
 
     private void unauthorizedFileCreation(StringBuilder wr, int wrStart) {
         Stream<Path> stream;
@@ -398,22 +266,10 @@ public class Controller implements Runnable {
                 if (!x.getFileName().toString().equals("files")) {
                     if (map.containsKey(x.getFileName().toString())) {
                         if (map.get(x.getFileName().toString()) == 0) {
-                            wr.append("Несанкционированное создание файла ").append(x.getFileName().toString());
-                            try {
-                                Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            wr.delete(wrStart, wr.length());
+                            logAndDelete(wr, wrStart, x);
                         }
                     } else {
-                        wr.append("Несанкционированное создание файла ").append(x.getFileName().toString());
-                        try {
-                            Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        wr.delete(wrStart, wr.length());
+                        logAndDelete(wr, wrStart, x);
                     }
                 }
             });
@@ -422,6 +278,17 @@ public class Controller implements Runnable {
             e.printStackTrace();
         }
 
+    }
+
+    private void logAndDelete(StringBuilder wr, int wrStart, Path x) {
+        wr.append("Несанкционированное создание файла ").append(x.getFileName().toString());
+        try {
+            Files.write(LOG_CONTROLLER, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.delete(x);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        wr.delete(wrStart, wr.length());
     }
 
     private long quantity(){
@@ -440,7 +307,7 @@ public class Controller implements Runnable {
     }
 
     public void start() {
-        System.out.println("Thread running " + flowName);
+        System.out.println("Старт потока " + flowName);
         //если поток не создан, то создаем и запускаем
         if (flowThread == null) {
             flowThread = new Thread(this, flowName);

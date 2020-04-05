@@ -315,7 +315,7 @@ public class FileManager implements Runnable {
         }
     }
     public void start() {
-        System.out.println("Thread running " + flowName);
+        System.out.println("Старт потока  " + flowName);
         //если поток не создан, то создаем и запускаем
         if (flowThread == null) {
             flowThread = new Thread(this, flowName);
