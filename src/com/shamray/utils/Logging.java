@@ -1,8 +1,6 @@
-package com.deus.utils;
+package com.shamray.utils;
 
-import com.deus.manager.FileManager;
-
-import java.io.*;
+import com.shamray.manager.FileManager;
 
 public class Logging {
     public static void main(String[] args) {
@@ -10,4 +8,3 @@ public class Logging {
         fileManager.start();
     }
 }
-

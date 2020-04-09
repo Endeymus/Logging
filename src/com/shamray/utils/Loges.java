@@ -1,6 +1,5 @@
-package com.deus.utils;
+package com.shamray.utils;
 
-import com.deus.utils.STATE;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,15 +12,25 @@ import java.util.Calendar;
 import java.util.Collections;
 
 public class Loges {
-    final static private String DIR_LOG = "C:\\Users\\User\\IdeaProjects\\Logging\\src\\logs\\log.txt";
+    final static private String DIR_LOG = "logs";
     final static private Path LOG_Name = Paths.get(DIR_LOG);
+    private static final String file_Name = "log.txt";
+    private static final Path FILE_PATH = LOG_Name.resolve(file_Name);
 
     public Loges() {
+
         if(Files.notExists(LOG_Name)) {
             try {
-                Files.createFile(LOG_Name);
+                Files.createDirectory(LOG_Name);
             } catch (IOException e){
                 e.printStackTrace();
+            }
+        }
+        if (Files.notExists(FILE_PATH)){
+            try {
+                Files.createFile(FILE_PATH);
+            } catch (IOException e){
+                System.out.println(e.getMessage());
             }
         }
     }
@@ -34,8 +43,8 @@ public class Loges {
             case CREATE:
                 wr.append(" [CREATE] ").append(fileName).append(" был создан.");
                 break;
-            case MODIFIED:
-                wr.append(" [MODIFIED] ").append(fileName).append(" был изменен.");
+            case OPEN:
+                wr.append(" [OPEN] ").append(fileName).append(" был открыт.");
                 break;
             case DELETED:
                 wr.append(" [DELETED] ").append(fileName).append(" был удален.");
@@ -55,15 +64,51 @@ public class Loges {
             case NOT_MODIFIED:
                 wr.append(" [ERROR] ").append(fileName).append(" не удалось изменить.");
                 break;
+            case NOT_OPEN:
+                wr.append(" [ERROR] ").append(fileName).append(" не удалось открыть.");
+                break;
+            case NOT_RENAME:
+                wr.append(" [ERROR] ").append(fileName).append(" не удалось переименовать.");
+                break;
+
+
         }
         try {
-            Files.write(LOG_Name, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.write(FILE_PATH, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+    public void create(String fileName, String content) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.y HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        StringBuilder wr = new StringBuilder(simpleDateFormat.format(calendar.getTime()));
+
+        wr.append(" [CONTENT] ").append(fileName).append(" был успешно изменен ").append("\n").append(content);
+        try {
+            Files.write(FILE_PATH, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void create(STATE state, String fileName0, String fileName1){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.y HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        StringBuilder wr = new StringBuilder(simpleDateFormat.format(calendar.getTime()));
+        switch (state){
+            case RENAME: {
+                wr.append(" [RENAME] ").append(fileName0).append(" был переиментован в ").append(fileName1);
+                break;
+            }
+        }
+        try {
+            Files.write(FILE_PATH, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e){
             e.printStackTrace();
         }
     }
     public void create(STATE state){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("y.MM.dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.y HH:mm:ss");
         Calendar calendar = Calendar.getInstance();
         StringBuilder wr = new StringBuilder(simpleDateFormat.format(calendar.getTime()));
         switch (state){
@@ -74,20 +119,27 @@ public class Loges {
                 wr.append(" [INFO] ").append(" запрос на удаление файла.");
                 break;
             case TRY_MODIFIED:
-                wr.append(" [INFO] ").append(" запрос на изменение.");
+                wr.append(" [INFO] ").append(" запрос на изменение файла.");
                 break;
             case TREE:
                 wr.append(" [INFO] ").append(" вывод дерева файлов.");
+                break;
+            case TRY_RENAME:
+                wr.append(" [INFO] ").append(" запрос на переименование файла.");
+                break;
+            case TRY_OPEN:
+                wr.append(" [INFO] ").append(" запрос на открытие файла.");
+                break;
         }
         try {
-            Files.write(LOG_Name, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.write(FILE_PATH, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e){
             e.printStackTrace();
         }
 
     }
     public void create(ERROR error){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("y.MM.dd HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.y HH:mm:ss");
         Calendar calendar = Calendar.getInstance();
         StringBuilder wr = new StringBuilder(simpleDateFormat.format(calendar.getTime()));
         switch (error){
@@ -100,9 +152,14 @@ public class Loges {
             case NOT_MODIFIED:
                 wr.append(" [ERROR] ").append(" отмена изменения файла.");
                 break;
+            case NOT_OPEN:
+                wr.append(" [ERROR] ").append(" отмена открытия файла.");
+                break;
+            case NOT_RENAME:
+                wr.append(" [ERROR] ").append(" отмена переименовывания файла.");
         }
         try {
-            Files.write(LOG_Name, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.write(FILE_PATH, Collections.singleton(wr), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e){
             e.printStackTrace();
         }
