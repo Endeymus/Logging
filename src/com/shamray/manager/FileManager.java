@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 public class FileManager implements Runnable {
     private Thread flowThread; //поток
     private String flowName; //имя потока
+    private int test = 1;
 
     private static final String DIR_LOGES = "logs\\log.txt";
     private static final String DIR_LOGES_MAIN = "logs\\main_log.txt";
